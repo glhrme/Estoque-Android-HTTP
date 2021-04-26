@@ -1,19 +1,28 @@
 package br.com.alura.estoque.ui.activity;
 
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.io.IOException;
+import java.util.List;
+
 import br.com.alura.estoque.R;
 import br.com.alura.estoque.asynctask.BaseAsyncTask;
 import br.com.alura.estoque.database.EstoqueDatabase;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
+import br.com.alura.estoque.retrofit.EstoqueRetrofit;
+import br.com.alura.estoque.retrofit.services.ProdutoService;
 import br.com.alura.estoque.ui.dialog.EditaProdutoDialog;
 import br.com.alura.estoque.ui.dialog.SalvaProdutoDialog;
 import br.com.alura.estoque.ui.recyclerview.adapter.ListaProdutosAdapter;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ListaProdutosActivity extends AppCompatActivity {
 
@@ -37,9 +46,28 @@ public class ListaProdutosActivity extends AppCompatActivity {
     }
 
     private void buscaProdutos() {
-        new BaseAsyncTask<>(dao::buscaTodos,
-                resultado -> adapter.atualiza(resultado))
-                .execute();
+        ProdutoService service = new EstoqueRetrofit().getProdutoService();
+        Call<List<Produto>> call = service.buscaTodos();
+        new BaseAsyncTask<>(() -> {
+            try {
+                Response<List<Produto>> response = call.execute();
+                List<Produto> produtosNovos = response.body();
+                return produtosNovos;
+            } catch (IOException err) {
+                err.printStackTrace();
+                return null;
+            }
+        }, produtosNovos -> {
+           if(produtosNovos != null) {
+               adapter.atualiza(produtosNovos);
+           } else {
+               Toast.makeText(this, "Não Buscou", Toast.LENGTH_SHORT).show();
+           }
+
+        });
+        //new BaseAsyncTask<>(dao::buscaTodos,
+        //        resultado -> adapter.atualiza(resultado))
+        //        .execute();
     }
 
     private void configuraListaProdutos() {
