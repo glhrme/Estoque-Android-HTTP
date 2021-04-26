@@ -5,6 +5,6 @@ import retrofit2.Call
 import retrofit2.http.GET
 
 interface ProdutoService {
-    @GET("/produto")
+    @GET("produto")
     fun buscaTodos(): Call<List<Produto>>;
 }

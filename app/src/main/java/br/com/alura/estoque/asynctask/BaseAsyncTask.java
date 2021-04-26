@@ -1,6 +1,7 @@
 package br.com.alura.estoque.asynctask;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 public class BaseAsyncTask<T> extends AsyncTask<Void, Void, T> {
 

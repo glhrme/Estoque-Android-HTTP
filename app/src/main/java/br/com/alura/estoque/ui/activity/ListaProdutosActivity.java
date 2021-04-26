@@ -1,6 +1,8 @@
 package br.com.alura.estoque.ui.activity;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -8,11 +10,15 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import br.com.alura.estoque.R;
 import br.com.alura.estoque.asynctask.BaseAsyncTask;
+import br.com.alura.estoque.asynctask.GetAsyncTask;
 import br.com.alura.estoque.database.EstoqueDatabase;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
@@ -46,28 +52,29 @@ public class ListaProdutosActivity extends AppCompatActivity {
     }
 
     private void buscaProdutos() {
-        ProdutoService service = new EstoqueRetrofit().getProdutoService();
-        Call<List<Produto>> call = service.buscaTodos();
+        buscaProdutosInternos(new EstoqueRetrofit().getProdutoService().buscaTodos());
+    }
+
+    private void buscaProdutosInternos(Call<List<Produto>> call) {
+        new BaseAsyncTask<>(dao::buscaTodos, resultado -> {
+            adapter.atualiza(resultado);
+            buscaProdutosNaApi(call);
+        }).execute();
+    }
+
+    private void buscaProdutosNaApi(Call<List<Produto>> call) {
         new BaseAsyncTask<>(() -> {
             try {
                 Response<List<Produto>> response = call.execute();
                 List<Produto> produtosNovos = response.body();
-                return produtosNovos;
+                if(produtosNovos != null)
+                    dao.salva(produtosNovos);
             } catch (IOException err) {
                 err.printStackTrace();
-                return null;
             }
-        }, produtosNovos -> {
-           if(produtosNovos != null) {
-               adapter.atualiza(produtosNovos);
-           } else {
-               Toast.makeText(this, "Não Buscou", Toast.LENGTH_SHORT).show();
-           }
-
-        });
-        //new BaseAsyncTask<>(dao::buscaTodos,
-        //        resultado -> adapter.atualiza(resultado))
-        //        .execute();
+            return dao.buscaTodos();
+        }, produtosNovos -> adapter.atualiza(produtosNovos))
+        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private void configuraListaProdutos() {
