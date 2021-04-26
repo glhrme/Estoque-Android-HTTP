@@ -11,19 +11,19 @@ import br.com.alura.estoque.ui.recyclerview.adapter.ListaProdutosAdapter
 import retrofit2.Call
 import java.io.IOException
 
-class ProdutoRepository(private val dao: ProdutoDAO, private val adapter: ListaProdutosAdapter) {
-    fun buscaProdutos() {
-        buscaProdutosInternos(EstoqueRetrofit().getProdutoService().buscaTodos())
+class ProdutoRepository(private val dao: ProdutoDAO) {
+    fun buscaProdutos(listener: ProdutosCarregadosListener) {
+        buscaProdutosInternos(EstoqueRetrofit().getProdutoService().buscaTodos(), listener)
     }
 
-    private fun buscaProdutosInternos(call: Call<List<Produto>>) {
-        BaseAsyncTask({ dao.buscaTodos() }, { resultado: List<Produto>? ->
-            adapter.atualiza(resultado)
-            buscaProdutosNaApi(call)
+    private fun buscaProdutosInternos(call: Call<List<Produto>>, listener: ProdutosCarregadosListener) {
+        BaseAsyncTask({ dao.buscaTodos() }, { resultado: List<Produto> ->
+            listener.onCarregados(resultado)
+            buscaProdutosNaApi(call, listener)
         }).execute()
     }
 
-    private fun buscaProdutosNaApi(call: Call<List<Produto>>) {
+    private fun buscaProdutosNaApi(call: Call<List<Produto>>, listener: ProdutosCarregadosListener) {
         BaseAsyncTask({
             try {
                 val response = call.execute()
@@ -33,7 +33,11 @@ class ProdutoRepository(private val dao: ProdutoDAO, private val adapter: ListaP
                 err.printStackTrace()
             }
             dao.buscaTodos()
-        }, { produtosNovos: List<Produto>? -> adapter.atualiza(produtosNovos) })
+        }, { produtosNovos: List<Produto> -> listener.onCarregados(produtosNovos)})
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+    }
+
+    interface ProdutosCarregadosListener {
+        fun onCarregados(produtos: List<Produto>)
     }
 }

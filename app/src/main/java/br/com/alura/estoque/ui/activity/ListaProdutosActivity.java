@@ -7,6 +7,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
 import br.com.alura.estoque.R;
 import br.com.alura.estoque.asynctask.BaseAsyncTask;
 import br.com.alura.estoque.database.EstoqueDatabase;
@@ -35,8 +39,9 @@ public class ListaProdutosActivity extends AppCompatActivity {
         EstoqueDatabase db = EstoqueDatabase.getInstance(this);
         dao = db.getProdutoDAO();
 
-        new ProdutoRepository(dao, adapter).buscaProdutos();
+        new ProdutoRepository(dao).buscaProdutos(produtos -> adapter.atualiza((List<Produto>) produtos));
     }
+
 
     private void configuraListaProdutos() {
         RecyclerView listaProdutos = findViewById(R.id.activity_lista_produtos_lista);
