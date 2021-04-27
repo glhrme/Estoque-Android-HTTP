@@ -49,7 +49,7 @@ class ProdutoRepository(private val dao: ProdutoDAO) {
     private fun salvaNaApi(call: Call<Produto>, listener: DadosCarregadosListener<Produto>) {
         call.enqueue(object : Callback<Produto> {
             override fun onResponse(call: Call<Produto>, response: Response<Produto>) {
-                if(response.isSuccessful) {
+                if(response.isSuccessful && response.body() != null) {
                     val produtoSalvo: Produto = response.body()!!
                     salvaInternoTask(produtoSalvo, listener)
                 }
