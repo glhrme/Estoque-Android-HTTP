@@ -42,22 +42,32 @@ class ProdutoRepository(private val dao: ProdutoDAO) {
 
     fun salva(produto: Produto, listener: DadosCarregadosListener<Produto>) {
         val call = service.salva(produto)
+        salvaNaApi(call, listener)
+
+    }
+
+    private fun salvaNaApi(call: Call<Produto>, listener: DadosCarregadosListener<Produto>) {
         call.enqueue(object : Callback<Produto> {
             override fun onResponse(call: Call<Produto>, response: Response<Produto>) {
-                val produtoSalvo: Produto = response.body()!!
-                BaseAsyncTask({
-                    val id = dao.salva(produtoSalvo)
-                    dao.buscaProduto(id)
-                }) { p: Produto ->
-                    listener.quandoCarregados(p)
-                }.execute()
+                if(response.isSuccessful) {
+                    val produtoSalvo: Produto = response.body()!!
+                    salvaInternoTask(produtoSalvo, listener)
+                }
             }
 
             override fun onFailure(call: Call<Produto>,
                                    t: Throwable) {
             }
         })
+    }
 
+    private fun salvaInternoTask(product: Produto, listener: DadosCarregadosListener<Produto>) {
+        BaseAsyncTask({
+            val id = dao.salva(product)
+            dao.buscaProduto(id)
+        }) { p: Produto ->
+            listener.quandoCarregados(p)
+        }.execute()
     }
 
     interface ProdutosCarregadosListener {
