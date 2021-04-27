@@ -25,7 +25,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     private static final String TITULO_APPBAR = "Lista de produtos";
     private ListaProdutosAdapter adapter;
-    private ProdutoDAO dao;
+    private ProdutoRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +37,9 @@ public class ListaProdutosActivity extends AppCompatActivity {
         configuraFabSalvaProduto();
 
         EstoqueDatabase db = EstoqueDatabase.getInstance(this);
-        dao = db.getProdutoDAO();
+        repository = new ProdutoRepository(db.getProdutoDAO());
 
-        new ProdutoRepository(dao).buscaProdutos(produtos -> adapter.atualiza((List<Produto>) produtos));
+        repository.buscaProdutos(produtos -> adapter.atualiza((List<Produto>) produtos));
     }
 
 
@@ -53,7 +53,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
     private void remove(int posicao,
                         Produto produtoRemovido) {
         new BaseAsyncTask<>(() -> {
-            dao.remove(produtoRemovido);
+            //dao.remove(produtoRemovido);
             return null;
         }, resultado -> adapter.remove(posicao))
                 .execute();
@@ -65,16 +65,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
     }
 
     private void abreFormularioSalvaProduto() {
-        new SalvaProdutoDialog(this, this::salva).mostra();
-    }
-
-    private void salva(Produto produto) {
-        new BaseAsyncTask<>(() -> {
-            long id = dao.salva(produto);
-            return dao.buscaProduto(id);
-        }, produtoSalvo ->
-                adapter.adiciona(produtoSalvo))
-                .execute();
+        new SalvaProdutoDialog(this, produtoCriado -> repository.salva(produtoCriado, produtoCriadoNovo -> adapter.adiciona(produtoCriadoNovo))).mostra();
     }
 
     private void abreFormularioEditaProduto(int posicao, Produto produto) {
@@ -85,7 +76,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     private void edita(int posicao, Produto produto) {
         new BaseAsyncTask<>(() -> {
-            dao.atualiza(produto);
+            //dao.atualiza(produto);
             return produto;
         }, produtoEditado ->
                 adapter.edita(posicao, produtoEditado))
